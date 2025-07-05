@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Literacy Word Search</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; max-width: 600px; margin: auto; }
+    h1 { text-align: center; }
+    table { border-collapse: collapse; margin: 20px auto; }
+    td { width: 32px; height: 32px; text-align: center; vertical-align: middle; border: 1px solid #ccc; 
+         cursor: pointer; user-select: none; font-weight: bold; }
+    td.selected { background: #ffeb3b; }
+    td.found { background: #8bc34a; color: #fff; }
+    td.wrong { background: #f44336; color: #fff; }
+    #word-list { list-style: none; padding: 0; }
+    #word-list li { margin: 5px 0; font-weight: bold; }
+    #word-list li.found { text-decoration: line-through; color: gray; }
+  </style>
+</head>
+<body>
+  <h1>Word Search: AI Literacy</h1>
+  <table id="grid"></table>
+  <h2>Words to Find</h2>
+  <ul id="word-list"></ul>
+
+  <script>
+    // The letter grid from the example
+    const letterGrid = [
+      ['D','A','T','A','A','O','U','T','P','U','T','B','E','F','D'],
+      ['E','X','T','R','A','C','T','I','O','N','O','P','A','A','E'],
+      ['W','Z','A','B','P','E','R','C','E','I','V','E','B','R','C'],
+      ['X','L','E','A','R','N','Q','R','S','T','U','T','C','T','I'],
+      ['Y','A','B','C','D','E','F','G','H','I','J','K','L','I','S'],
+      ['Z','L','P','M','M','A','C','H','I','N','E','N','O','F','I'],
+      ['A','V','A','B','C','D','E','F','G','H','I','J','K','I','O'],
+      ['I','N','T','E','L','L','I','G','E','N','C','E','O','C','N'],
+      ['N','R','T','E','W','X','N','T','E','R','A','C','A','I','Q'],
+      ['P','T','E','W','L','Y','T','F','G','L','A','B','E','A','R'],
+      ['U','Y','R','L','K','B','E','O','C','L','A','B','E','L','S'],
+      ['T','U','N','W','C','D','R','F','G','H','E','P','O','R','T'],
+      ['A','B','C','D','T','R','A','I','N','I','N','G','E','F','G'],
+      ['B','C','D','E','F','G','C','H','S','E','N','S','I','N','G'],
+      ['C','I','M','P','A','C','T','A','O','F','G','H','T','S','A'],
+    ];
+    const words = [
+      'ARTIFICIAL','EXTRACTION','INTERACT','LEARN','INTELLIGENCE',
+      'DECISION','IMPACT','PATTERN','DATA','INPUT','MACHINE',
+      'PERCEIVE','LABEL','OUTPUT','TRAINING','SENSING'
+    ];
+    let start = null;
+    const foundWords = new Set();
+
+    // Build the grid table
+    const table = document.getElementById('grid');
+    letterGrid.forEach((row, r) => {
+      const tr = document.createElement('tr');
+      row.forEach((letter, c) => {
+        const td = document.createElement('td');
+        td.textContent = letter;
+        td.dataset.row = r;
+        td.dataset.col = c;
+        td.addEventListener('click', handleClick);
+        tr.appendChild(td);
+      });
+      table.appendChild(tr);
+    });
+
+    // Build the word list
+    const wordListEl = document.getElementById('word-list');
+    words.forEach(w => {
+      const li = document.createElement('li');
+      li.textContent = w;
+      li.dataset.word = w;
+      wordListEl.appendChild(li);
+    });
+
+    function handleClick(e) {
+      const td = e.target;
+      const r = parseInt(td.dataset.row);
+      const c = parseInt(td.dataset.col);
+
+      if (!start) {
+        // First click: set start cell
+        start = {r, c};
+        td.classList.add('selected');
+      } else {
+        // Second click: set end cell and check
+        const end = {r, c};
+        const dr = end.r - start.r;
+        const dc = end.c - start.c;
+        const steps = Math.max(Math.abs(dr), Math.abs(dc));
+        const stepR = dr === 0 ? 0 : dr / steps;
+        const stepC = dc === 0 ? 0 : dc / steps;
+        let path = [];
+        let valid = Number.isInteger(stepR) && Number.isInteger(stepC);
+
+        if (valid) {
+          for (let i = 0; i <= steps; i++) {
+            const rr = start.r + stepR * i;
+            const cc = start.c + stepC * i;
+            if (rr < 0 || rr >= letterGrid.length || cc < 0 || cc >= letterGrid[0].length) {
+              valid = false;
+              break;
+            }
+            path.push({r: rr, c: cc});
+          }
+        }
+
+        let word = '';
+        if (valid) {
+          path.forEach(p => word += letterGrid[p.r][p.c]);
+        }
+        const reversed = word.split('').reverse().join('');
+
+        let found = false;
+        let foundWord = null;
+        if (valid) {
+          words.forEach(w => {
+            if ((word === w || reversed === w) && !foundWords.has(w)) {
+              found = true;
+              foundWord = w;
+            }
+          });
+        }
+
+        // Highlight the path
+        path.forEach(p => {
+          const cell = table.rows[p.r].cells[p.c];
+          cell.classList.add(found ? 'found' : 'wrong');
+        });
+
+        // Update word list if found
+        if (found) {
+          foundWords.add(foundWord);
+          const li = wordListEl.querySelector(`li[data-word="${foundWord}"]`);
+          if (li) li.classList.add('found');
+        }
+
+        // Clear selection/wrong classes after a short delay
+        setTimeout(() => {
+          table.querySelectorAll('td.selected, td.wrong').forEach(cell => {
+            cell.classList.remove('selected', 'wrong');
+          });
+        }, 500);
+
+        start = null;
+      }
+    }
+  </script>
+</body>
+</html>
